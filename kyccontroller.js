@@ -3,8 +3,17 @@ const path = require('path');
 const fs = require('fs');
 const Kyc = require('../models/KycSchema');
 const profileModel = require('../models/Profileschema');
+const nodemailer = require('nodemailer');
+ 
 
-
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'rajahulk@gmail.com',
+      pass: 'xctpaglwzxqwlbkp',
+    },
+  });
+  
 
 const handleGetKyc = async (req, res) => {
     try {
@@ -59,20 +68,33 @@ const handleUpdateKyc = async (req, res) => {
         await Kyc.findOneAndUpdate({ _id: reqData._id }, updateQ);
         msg = reqData.type + reqData.flag === 0 ? 'Rejected' : ' Approved'
 
-        let findComplted = await Kyc.findOne({_id: reqData._id , frontStatus:true , backStatus:true,selfiStatus:true} , )
+        let findCompleted = await Kyc.findOne({_id: reqData._id , frontStatus:true , backStatus:true,selfiStatus:true} , )
         let {userEmail} = await profileModel.findOne({address: reqData.address} , {userEmail:1} )
 
-        if(findComplted){
-            // mainto:
-        }
-
-
-        res.status(200).json({ success: true, message: msg });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Err-' + error.message });
-    }
-};
+        if(findCompleted){
+            const mailOptions = {
+                from: 'rajahulk@gmail.com',
+                to: 'rajahulk@gmail.com',
+                subject: 'KYC Status Update',
+                text: `Your KYC has been ${msg}.`,
+              };
+        
+              transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                  console.error('Error sending email:', error);
+                } else {
+                  console.log('Email sent:', info.response);
+                }
+              });
+            }
+        
+            res.status(200).json({ success: true, message: msg });
+          } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Err-' + error.message });
+          }
+        };
+        
 
 
 // OLD
